@@ -1,0 +1,52 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+solc = "0.8.24"
+evm_version = "cancun"
+
+# Pinned fork RPCs — eth.drpc.org serves pinned historical blocks
+# (publicnode free tier rejects archive reads; see ~/AGENTS.md).
+[rpc_endpoints]
+eth = "https://eth.drpc.org"
+base = "https://mainnet.base.org"
+arb = "https://arb1.arbitrum.io/rpc"
+
+[profile.default.fuzz]
+runs = 256
+
+# G4-C invariant fuzzing: runs x depth handler calls per suite.
+# First iteration runs=32/depth=24; bump after measuring wall time.
+# include_storage=false: the invariant setup otherwise scans fork storage
+# for dictionary addresses, turning small storage words (e.g. 0x2353)
+# into hundreds of eth_getAccount RPC calls that 429 drpc's free tier.
+# The G4-C handlers take only uint seeds/amounts and pick actors
+# internally, so the storage dictionary adds nothing here.
+[invariant]
+runs = 32
+depth = 24
+include_storage = false
+
+# Dedicated profile for invariant runs on the ETH fork: the default
+# fuzzer scans fork storage for dictionary addresses, which turns small
+# storage words (e.g. 0x2353) into hundreds of eth_getAccount RPC calls
+# and 429s drpc's free tier during invariant setup. The G4-C handlers
+# take only uint seeds/amounts and pick actors internally, so the
+# storage dictionary adds nothing here. Default profile untouched.
+[profile.invariant]
+src = "src"
+out = "out"
+libs = ["lib"]
+solc = "0.8.24"
+evm_version = "cancun"
+
+[profile.invariant.fuzz]
+runs = 256
+include_storage = false
+
+[profile.invariant.invariant]
+runs = 32
+depth = 24
+# NOTE: [invariant] has its OWN include_storage (separate from [fuzz]);
+# it defaults true and is the one that 429s drpc during setup.
+include_storage = false
